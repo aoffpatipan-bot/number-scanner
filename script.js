@@ -1,75 +1,96 @@
-
 const video=document.getElementById("video");
 const canvas=document.getElementById("overlay");
 const ctx=canvas.getContext("2d");
+const status=document.getElementById("status");
 
 let nextNumber=1;
-let busy=false;
 
 document.getElementById("nextNumber").textContent=nextNumber;
 
 document.getElementById("start").onclick=async()=>{
 
-const stream=await navigator.mediaDevices.getUserMedia({
-video:{facingMode:{ideal:"environment"}},
-audio:false
-});
+  try{
 
-video.srcObject=stream;
-await video.play();
+    const stream=await navigator.mediaDevices.getUserMedia({
+      video:{
+        facingMode:{ideal:"environment"}
+      },
+      audio:false
+    });
 
-canvas.width=video.videoWidth;
-canvas.height=video.videoHeight;
+    video.srcObject=stream;
+    await video.play();
 
-setInterval(scanFrame,100);
+    canvas.width=video.videoWidth;
+    canvas.height=video.videoHeight;
+
+    status.textContent="📷 เปิดกล้องสำเร็จ";
+
+  }catch(err){
+
+    status.textContent="❌ เปิดกล้องไม่ได้: "+err.message;
+    console.error(err);
+
+  }
 
 };
 
-async function scanFrame(){
+document.getElementById("scan").onclick=async()=>{
 
-if(busy||!video.videoWidth)return;
+  if(!video.videoWidth){
 
-busy=true;
+    status.textContent="กรุณาเปิดกล้องก่อน";
+    return;
 
-ctx.drawImage(video,0,0,canvas.width,canvas.height);
+  }
 
-const result=await Tesseract.recognize(canvas,"eng");
+  status.textContent="กำลังสแกน...";
 
-ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(video,0,0,canvas.width,canvas.height);
 
-result.data.words.forEach(w=>{
+  const result=await Tesseract.recognize(canvas,"eng");
 
-if(w.text.trim()==String(nextNumber)){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
-const b=w.bbox;
+  let found=false;
 
-ctx.strokeStyle="red";
-ctx.lineWidth=6;
+  result.data.words.forEach(word=>{
 
-ctx.beginPath();
+    if(word.text.trim()==String(nextNumber)){
 
-ctx.arc(
-(b.x0+b.x1)/2,
-(b.y0+b.y1)/2,
-Math.max(b.x1-b.x0,b.y1-b.y0),
-0,
-Math.PI*2
-);
+      found=true;
 
-ctx.stroke();
+      const b=word.bbox;
 
-}
+      ctx.strokeStyle="red";
+      ctx.lineWidth=6;
 
-});
+      ctx.beginPath();
 
-busy=false;
+      ctx.arc(
+        (b.x0+b.x1)/2,
+        (b.y0+b.y1)/2,
+        Math.max(b.x1-b.x0,b.y1-b.y0),
+        0,
+        Math.PI*2
+      );
 
-}
+      ctx.stroke();
+
+    }
+
+  });
+
+  status.textContent=found
+    ? `พบเลข ${nextNumber} แล้ว`
+    : `ไม่พบเลข ${nextNumber}`;
+
+};
 
 canvas.addEventListener("click",()=>{
 
-nextNumber++;
+  nextNumber++;
 
-document.getElementById("nextNumber").textContent=nextNumber;
+  document.getElementById("nextNumber").textContent=nextNumber;
 
 });
