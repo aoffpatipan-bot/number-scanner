@@ -1,80 +1,59 @@
-const video=document.getElementById("video");
-const canvas=document.getElementById("overlay");
-const ctx=canvas.getContext("2d");
 
-let nextNumber=1;
-let scanning=false;
+const video = document.getElementById("video");
+const canvas = document.getElementById("overlay");
+const ctx = canvas.getContext("2d");
 
-document.getElementById("nextNumber").textContent=nextNumber;
+let nextNumber = 1;
+document.getElementById("nextNumber").textContent = nextNumber;
 
-document.getElementById("start").onclick=async()=>{
+document.getElementById("start").onclick = async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: "environment" }
+      },
+      audio: false
+    });
 
-const stream=await navigator.mediaDevices.getUserMedia({
-video:{
-facingMode:{ideal:"environment"}
-}
-});
+    video.srcObject = stream;
+    await video.play();
 
-video.srcObject=stream;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
 
-await video.play();
-
-canvas.width=video.videoWidth;
-canvas.height=video.videoHeight;
-
+    alert("เปิดกล้องสำเร็จ 📷");
+  } catch (err) {
+    alert("เปิดกล้องไม่ได้: " + err.message);
+    console.error(err);
+  }
 };
 
-async function scanFrame(){
+document.getElementById("scan").onclick = async () => {
+  if (!video.videoWidth) {
+    alert("กรุณาเปิดกล้องก่อน");
+    return;
+  }
 
-if(!video.videoWidth)return;
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-ctx.drawImage(video,0,0,canvas.width,canvas.height);
+  const result = await Tesseract.recognize(canvas, "eng");
 
-const result=await Tesseract.recognize(canvas,"eng");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-ctx.clearRect(0,0,canvas.width,canvas.height);
-
-result.data.words.forEach(word=>{
-
-if(word.text.trim()==nextNumber.toString()){
-
-const b=word.bbox;
-
-ctx.strokeStyle="red";
-ctx.lineWidth=5;
-
-ctx.beginPath();
-
-ctx.arc(
-(b.x0+b.x1)/2,
-(b.y0+b.y1)/2,
-Math.max(b.x1-b.x0,b.y1-b.y0),
-0,
-Math.PI*2
-);
-
-ctx.stroke();
-
-}
-
-});
-
-}
-
-document.getElementById("scan").onclick=()=>{
-
-if(scanning)return;
-
-scanning=true;
-
-setInterval(scanFrame,100);
-
+  result.data.words.forEach(word => {
+    if (word.text.trim() === nextNumber.toString()) {
+      const b = word.bbox;
+      ctx.strokeStyle = "red";
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.arc(
+        (b.x0 + b.x1) / 2,
+        (b.y0 + b.y1) / 2,
+        Math.max(b.x1 - b.x0, b.y1 - b.y0),
+        0,
+        Math.PI * 2
+      );
+      ctx.stroke();
+    }
+  });
 };
-
-canvas.addEventListener("click",()=>{
-
-nextNumber++;
-
-document.getElementById("nextNumber").textContent=nextNumber;
-
-});
