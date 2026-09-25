@@ -1,0 +1,32 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Number Scanner</title>
+
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+</head>
+<body>
+
+<h2>🔴 Number Scanner 1-25</h2>
+
+<div class="camera-box">
+    <video id="video" autoplay playsinline></video>
+    <canvas id="overlay"></canvas>
+</div>
+
+<div class="panel">
+    <button id="start">เปิดกล้อง</button>
+    <button id="scan">สแกน</button>
+
+    <h3>เลขต่อไป : <span id="nextNumber">1</span></h3>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
